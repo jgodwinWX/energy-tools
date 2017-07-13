@@ -1,8 +1,33 @@
+#!/usr/bin env python
+''' Computes forecast energy usage based on previous usage and climate data
+
+This program reads in three CSVs: one containing daily climate data, one containing monthly
+climate data, and the last containing electric usage data. The daily climate data file is
+used to derive a 2nd degree polynomial function that attempts to predict power usage (kWh) 
+based on average temperature during a billing period. The power usage data along with the 
+billed amount and billing period dates is also contained in the power usage CSV. Finally,
+a monthly CSV is used (obtained by running Jason Godwin's climate-tools/monthly.py script)
+to derive an estimate of power usage (based on monthly average temperature) and rates.
+This script was designed in Texas where many customers have plans that offer fixed rates
+(e.g. 7.5 cents per kilowatthour) for a fixed term (e.g. 12 months). For plans where
+utility rates are variable, or for spot price plans, this script will not be as effective
+in estimating cost, but should still be able to estimate power consumption.
+
+'''
 import datetime
 import numpy
 import pandas
-
 from scipy.optimize import fmin
+
+__author__ = 'Jason W. Godwin'
+__copyright__ = 'Public Domain'
+__credits__ = 'NOAA/National Weather Service as source for climate information'
+
+__license__ = 'GNU General Public License v3.0'
+__version__ = '1.0'
+__maintainer__ = 'Jason W. Godwin'
+__email__ = 'jasonwgodwin@gmail.com'
+__status__ = 'Production'
 
 def costProjection(avg,lower,upper,critical,func):
     # first we find which bound will cost more
