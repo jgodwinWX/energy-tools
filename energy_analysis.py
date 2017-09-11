@@ -13,6 +13,11 @@ This script was designed in Texas where many customers have plans that offer fix
 utility rates are variable, or for spot price plans, this script will not be as effective
 in estimating cost, but should still be able to estimate power consumption.
 
+Version History
+1.0 - Initial build.
+1.1 - Modified to use NOAA ACIS climate CSV. Note that any lines in the climate CSV containing
+      missing data (M) for highs or lows must be removed. Also, remove spaces from column headers.
+
 '''
 import datetime
 import numpy
@@ -24,7 +29,7 @@ __copyright__ = 'Public Domain'
 __credits__ = 'NOAA/National Weather Service as source for climate information'
 
 __license__ = 'GNU General Public License v3.0'
-__version__ = '1.0'
+__version__ = '1.1'
 __maintainer__ = 'Jason W. Godwin'
 __email__ = 'jasonwgodwin@gmail.com'
 __status__ = 'Production'
@@ -46,7 +51,7 @@ def costProjection(avg,lower,upper,critical,func):
 # create data frames for the two CSVs
 energy_df = pandas.read_csv("kwhhistory.csv",\
     dtype={'Start Date':str,'End Date':str,'Usage':float,'Bill':float,'Provider':str})
-temp_df = pandas.read_csv("dfw.csv",dtype={'dates':str,'highs':float,'lows':float,'precip':str})
+temp_df = pandas.read_csv("dfw_acis.csv",dtype={'Date':str,'MaxTemperature':float,'MinTemperature':float,'Precipitation':str})
 monthly_df = pandas.read_csv("dfw_monthly.csv",dtype={'Month':str,'Average':float,'StDev':float,\
     '25th Pct':float,'75th Pct':float})
 
@@ -56,9 +61,9 @@ electric_end_dates = energy_df['End Date']      # billing period end date (mm/dd
 electric_usage = energy_df['Usage']             # electric usage (kWh)
 electric_bill = energy_df['Bill']               # electric bill (total bill in USD)
 electric_provider = energy_df['Provider']       # electric provider/plan
-climo_date = temp_df['dates']                   # date of climate data (mm/dd/yyyy)
-highs = temp_df['highs']                        # daily high temperature (deg F)
-lows = temp_df['lows']                          # daily low temperature (deg F)
+climo_date = temp_df['Date']                    # date of climate data (mm/dd/yyyy)
+highs = temp_df['MaxTemperature']               # daily high temperature (deg F)
+lows = temp_df['MinTemperature']                # daily low temperature (deg F)
 months = monthly_df['Month']                    # calendar month
 monthly_avg = monthly_df['Average']             # average monthly temperature (deg F)
 monthly_lower = monthly_df['25th Pct']          # 25th percentile average temperature (deg F)
@@ -69,7 +74,7 @@ electric_start_datetimes = numpy.array([datetime.datetime.strptime(x,'%m/%d/%Y')
     for x in electric_start_dates])
 electric_end_datetimes = numpy.array([datetime.datetime.strptime(y,'%m/%d/%Y')\
     for y in electric_end_dates])
-climo_datetimes = numpy.array([datetime.datetime.strptime(z,'%m/%d/%Y') for z in climo_date])
+climo_datetimes = numpy.array([datetime.datetime.strptime(z,'%Y-%m-%d') for z in climo_date])
 
 # compute the average temperature for each day
 avg_temp = numpy.zeros(len(highs))
